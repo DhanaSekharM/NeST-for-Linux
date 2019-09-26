@@ -6,8 +6,8 @@ import sys
 import time
 import matplotlib.pyplot as plt
 
-PERIOD  = 0.1 # in seconds
-COUNT   = 100
+#PERIOD  = 0.1 # in seconds
+#COUNT   = 100
 
 def get_param(host):
     """
@@ -41,45 +41,55 @@ def get_param(host):
 
     return [parameters["rtt"], parameters["cwnd"]]
 
-TIME = 0
-RTTs = []
-CWNDs = []
-TIMEs = []
+def plot_param(host, PERIOD = 0.1, COUNT = 100, OUTPUT = "output.png"):
+    """
+    plots cwnd and rtt into OUTPUT file
+    host  : host ip
+    PERIOD: Time between each measurement in seconds
+    COUNT : Number of measurements
+    OUTPUT: Output file for the plot
+    """
+    TIME = 0
+    RTTs = []
+    CWNDs = []
+    TIMEs = []
 
-host = sys.argv[1]
+    # host = sys.argv[1]
 
-for i in range(COUNT):
-    # if(i/COUNT > 0.1):
-    #     host = '172.217.167.142'
-    # else:
-    #     continue
-    param = get_param(host)
-    # print(i)
-    # for p in param:
-    #     print(p)
-    # print()
+    for i in range(COUNT):
+        # if(i/COUNT > 0.1):
+        #     host = '172.217.167.142'
+        # else:
+        #     continue
+        param = get_param(host)
+        # print(i)
+        # for p in param:
+        #     print(p)
+        # print()
 
-    try:
-        rtt = float(param[0][4:].split("/")[0])
-        cwnd = float(param[1][5:])
-        
+        try:
+            rtt = float(param[0][4:].split("/")[0])
+            cwnd = float(param[1][5:])
+            RTTs.append(rtt)
+            CWNDs.append(cwnd)
 
-        RTTs.append(rtt)
-        CWNDs.append(cwnd)
+        except:
+            RTTs.append(0)
+            CWNDs.append(0)
 
-    except:
-        RTTs.append(0)
-        CWNDs.append(0)
-
-    TIMEs.append(TIME)
-    TIME += PERIOD
-    time.sleep(PERIOD)
+        TIMEs.append(TIME)
+        TIME += PERIOD
+        time.sleep(PERIOD)
 
 
-plt.subplot(211)
-plt.plot(TIMEs, RTTs)
-# plt.show()
+    # TODO: Nicer plot output
+    plt.subplot(211)
+    plt.plot(TIMEs, RTTs)
+    # plt.show()
 
-plt.subplot(212)
-plt.plot(TIMEs, CWNDs)
-plt.show()
+    plt.subplot(212)
+    plt.plot(TIMEs, CWNDs)
+    #plt.show()
+    plt.savefig(OUTPUT)
+
+
