@@ -6,8 +6,9 @@ import sys
 import time
 import matplotlib.pyplot as plt
 
-#PERIOD  = 0.1 # in seconds
-#COUNT   = 100
+PERIOD  = 0.1 # in seconds
+COUNT   = 100
+OUTPUT  = "output.png"
 
 def get_param(host):
     """
@@ -41,20 +42,21 @@ def get_param(host):
 
     return [parameters["rtt"], parameters["cwnd"]]
 
-def plot_param(host, PERIOD = 0.1, COUNT = 100, OUTPUT = "output.png"):
-    """
-    plots cwnd and rtt into OUTPUT file
-    host  : host ip
-    PERIOD: Time between each measurement in seconds
-    COUNT : Number of measurements
-    OUTPUT: Output file for the plot
-    """
+#def plot_param(host, PERIOD = 0.1, COUNT = 100, OUTPUT = "output.png"):
+#    """
+#    plots cwnd and rtt into OUTPUT file
+#    host  : host ip
+#    PERIOD: Time between each measurement in seconds
+#    COUNT : Number of measurements
+#    OUTPUT: Output file for the plot
+#    """
+if __name__ == "__main__":
     TIME = 0
     RTTs = []
     CWNDs = []
     TIMEs = []
 
-    # host = sys.argv[1]
+    host = sys.argv[1]
 
     for i in range(COUNT):
         # if(i/COUNT > 0.1):
@@ -81,6 +83,8 @@ def plot_param(host, PERIOD = 0.1, COUNT = 100, OUTPUT = "output.png"):
         TIME += PERIOD
         time.sleep(PERIOD)
 
+    # TODO: Replace this with something better
+    print("Done getting values")
 
     # TODO: Nicer plot output
     plt.subplot(211)
@@ -89,7 +93,7 @@ def plot_param(host, PERIOD = 0.1, COUNT = 100, OUTPUT = "output.png"):
 
     plt.subplot(212)
     plt.plot(TIMEs, CWNDs)
-    #plt.show()
+    # plt.show()
     plt.savefig(OUTPUT)
 
 

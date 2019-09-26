@@ -14,7 +14,18 @@ def exec_subprocess(cmd, block = True):
 		temp.communicate()
 	else:
 		pass
-	
+
+# ns: namespace
+def server(ns):
+    exec_subprocess("ip netns exec " + ns + " python3 server.py")
+
+def client(ns):
+    # TODO: Remove server IP dependency
+    exec_subprocess("ip netns exec " + ns + " telnet 10.0.0.2 1025")
+
+def get_param(ns):
+    exec_subprocess("ip netns exec " + ns + " ./ss.py 10.0.0.2")
+
 # Default Network Namespaces
 n1 = "n1"
 n2 = "n2"
@@ -46,15 +57,18 @@ exec_subprocess("ip netns exec " + n2 + " ip link set dev eth-n2 up")
 exec_subprocess("ip netns exec " + n2 + " ip address add 10.0.0.2/24 dev eth-n2")
 
 # Run server and client application
-t1 = threading.Thread(target=exec_subprocess, args=("ip netns exec " + n2 + " python3 server.py", )) 
-t2 = threading.Thread(target=exec_subprocess, args=("ip netns exec " + n1 + " telnet 10.0.0.2 1025", ))
+t1 = threading.Thread(target=server, args=(n2, ))
+t2 = threading.Thread(target=client, args=(n1, ))
+t3 = threading.Thread(target=get_param, args=(n1, ))
 
 t1.start()
-time.sleep(2.0)
+time.sleep(2.0) # to ensure that telnet runs after server is established
 t2.start()
+t3.start()
 
 t1.join()
 t2.join()
+t3.join()
 
 # exec_subprocess("ip netns exec " + n2 + " python3 server.py")
 # exec_subprocess("ip netns exec " + n1 + " telnet 10.0.0.2 1025")
