@@ -18,19 +18,20 @@ def exec_subprocess(cmd, block = True):
 # ns: namespace
 def server(ns):
     #run a iperf server for 10s
-    exec_subprocess("ip netns exec " + ns + " iperf -s -t 10")
+    exec_subprocess('ip netns exec ' + ns + ' iperf -s -t 10')
 
 def client(ns):
     # TODO: Remove server IP dependency
     #run a iperf client for 10s running 4 processes in parallel
-    exec_subprocess("ip netns exec " + ns + " iperf -c 10.0.0.2 -t 10 -P 4")
+    exec_subprocess('ip netns exec ' + ns + ' iperf -c 10.1.2.2 -t 10 -P 4')
 
 def get_param(ns):
-    exec_subprocess("ip netns exec " + ns + " ./ss.py 10.0.0.2")
+    exec_subprocess('ip netns exec ' + ns + ' ./ss.py 10.1.2.2')
 
 # Default Network Namespaces
-n1 = "n1"
-n2 = "n2"
+n1 = 'n1'
+n2 = 'n2'
+router = 'router'
 
 # Parse Arguements
 cmdParser = argparse.ArgumentParser()
@@ -41,22 +42,37 @@ n2 = args.names[1]
 
 # Add Network Namespace
 # TODO: Check if the namespace already exists
-exec_subprocess("ip netns add " + n1)
-exec_subprocess("ip netns add " + n2)
+exec_subprocess('ip netns add ' + n1)
+exec_subprocess('ip netns add ' + n2)
+exec_subprocess('ip netns add ' + router)
 
 # Setup virtual ethernet devices (veth)
-exec_subprocess("ip link add eth-n1 type veth peer name eth-n2")
-exec_subprocess("ip link set eth-n1 netns " + n1)
-exec_subprocess("ip link set eth-n2 netns " + n2)
+exec_subprocess('ip link add eth-n1 type veth peer name eth-r1')
+exec_subprocess('ip link add eth-r2 type veth peer name eth-n2')
+exec_subprocess('ip link set eth-n1 netns ' + n1)
+exec_subprocess('ip link set eth-r1 netns ' + router)
+exec_subprocess('ip link set eth-r2 netns ' + router)
+exec_subprocess('ip link set eth-n2 netns ' + n2)
 
 # Configure the ethernet devices
-exec_subprocess("ip netns exec " + n1 + " ip link set dev lo up")
-exec_subprocess("ip netns exec " + n1 + " ip link set dev eth-n1 up")
-exec_subprocess("ip netns exec " + n1 + " ip address add 10.0.0.1/24 dev eth-n1")
+exec_subprocess('ip netns exec ' + n1 + ' ip link set dev lo up')
+exec_subprocess('ip netns exec ' + n1 + ' ip link set dev eth-n1 up')
+exec_subprocess('ip netns exec ' + n1 + ' ip address add 10.1.1.1/24 dev eth-n1')
 
-exec_subprocess("ip netns exec " + n2 + " ip link set dev lo up")
-exec_subprocess("ip netns exec " + n2 + " ip link set dev eth-n2 up")
-exec_subprocess("ip netns exec " + n2 + " ip address add 10.0.0.2/24 dev eth-n2")
+exec_subprocess('ip netns exec ' + router + ' ip link set dev eth-r1 up')
+exec_subprocess('ip netns exec ' + router + ' ip link set dev eth-r2 up')
+exec_subprocess('ip netns exec ' + router + ' ip address add 10.1.1.2/24 dev eth-r1')
+exec_subprocess('ip netns exec ' + router + ' ip address add 10.1.2.1/24 dev eth-r2')
+
+exec_subprocess('ip netns exec ' + n2 + ' ip link set dev lo up')
+exec_subprocess('ip netns exec ' + n2 + ' ip link set dev eth-n2 up')
+exec_subprocess('ip netns exec ' + n2 + ' ip address add 10.1.2.2/24 dev eth-n2')
+
+# Configure routing
+exec_subprocess('ip netns exec ' + n1 + ' ip route add 10.1.2.0/24 dev eth-n1 via 10.1.1.2')
+exec_subprocess('ip netns exec ' + router + ' ip route add 10.1.1.0/24 dev eth-r1 via 10.1.1.1')
+exec_subprocess('ip netns exec ' + router + ' ip route add 10.1.2.0/24 dev eth-r2 via 10.1.2.2')
+exec_subprocess('ip netns exec ' + n2 + ' ip route add 10.1.1.0/24 dev eth-n2 via 10.1.2.1')
 
 # Run server and client application
 t1 = threading.Thread(target=server, args=(n2, ))
@@ -64,7 +80,7 @@ t2 = threading.Thread(target=client, args=(n1, ))
 t3 = threading.Thread(target=get_param, args=(n1, ))
 
 t1.start()
-time.sleep(2.0) # to ensure that telnet runs after server is established
+time.sleep(2.0) # to ensure that iperf runs after server is established
 t2.start()
 t3.start()
 
@@ -72,10 +88,11 @@ t1.join()
 t2.join()
 t3.join()
 
-# exec_subprocess("ip netns exec " + n2 + " python3 server.py")
-# exec_subprocess("ip netns exec " + n1 + " telnet 10.0.0.2 1025")
-# exec_subprocess("ip netns exec " + n1 + " python3 client.py", block=False)
-
-# Delete created Network Namespaces
-exec_subprocess("ip netns del " + n1)
-exec_subprocess("ip netns del " + n2)
+# Delete created Network Namespaces and veth pairs
+exec_subprocess('ip netns exec ' + n1 + ' ip link del eth-n1')
+exec_subprocess('ip netns exec ' + router + ' ip link del eth-r1')
+exec_subprocess('ip netns exec ' + router + ' ip link del eth-r2')
+exec_subprocess('ip netns exec ' + n2 + ' ip link del eth-n2')
+exec_subprocess('ip netns del ' + n1)
+exec_subprocess('ip netns del ' + n2)
+exec_subprocess('ip netns del ' + router)
