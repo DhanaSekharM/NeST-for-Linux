@@ -8,49 +8,48 @@ import matplotlib.pyplot as plt
 
 PERIOD  = 0.1 # in seconds
 COUNT   = 100
-OUTPUT  = "output.png"
+OUTPUT  = 'output.png'
 
 def get_param(host):
-    """
+    '''
     returns rtt and cwnd
-    ip:   host ip (I think)
+    ip:   host ip
     port: host port
-    """
+    '''
 
-    # ss -i dst 172.217.26.238:https
-
-    cmd = "ss"
-    args = "-i"
-    host = "dst "+host
+    cmd = 'ss'
+    args = '-i'
+    host = 'dst '+host
 
     temp = subprocess.Popen([cmd, args, host], stdout = subprocess.PIPE)
     output = str(temp.communicate())
-    
-    output = output.split("\n")
-    # print(output[0])
-    output = output[0].split("\\")
+
+    # print(output)
+
+    output = output.split('\n')
+    output = output[0].split('\\')
 
     if(len(output) < 3):
-        return ["null", "null"]
+        return ['null', 'null']
 
     parameters = {}
 
     for p in output[3].split():
-        parameters[p.split(":")[0]] = p
+        parameters[p.split(':')[0]] = p
 
-    # parameters = output[3].split(" ")
+    # parameters = output[3].split(' ')
 
-    return [parameters["rtt"], parameters["cwnd"]]
+    return [parameters['rtt'], parameters['cwnd']]
 
-#def plot_param(host, PERIOD = 0.1, COUNT = 100, OUTPUT = "output.png"):
-#    """
+#def plot_param(host, PERIOD = 0.1, COUNT = 100, OUTPUT = 'output.png'):
+#    '''
 #    plots cwnd and rtt into OUTPUT file
 #    host  : host ip
 #    PERIOD: Time between each measurement in seconds
 #    COUNT : Number of measurements
 #    OUTPUT: Output file for the plot
-#    """
-if __name__ == "__main__":
+#    '''
+if __name__ == '__main__':
     TIME = 0
     RTTs = []
     CWNDs = []
@@ -59,18 +58,10 @@ if __name__ == "__main__":
     host = sys.argv[1]
 
     for i in range(COUNT):
-        # if(i/COUNT > 0.1):
-        #     host = '172.217.167.142'
-        # else:
-        #     continue
         param = get_param(host)
-        # print(i)
-        # for p in param:
-        #     print(p)
-        # print()
 
         try:
-            rtt = float(param[0][4:].split("/")[0])
+            rtt = float(param[0][4:].split('/')[0])
             cwnd = float(param[1][5:])
             RTTs.append(rtt)
             CWNDs.append(cwnd)
@@ -84,16 +75,21 @@ if __name__ == "__main__":
         time.sleep(PERIOD)
 
     # TODO: Replace this with something better
-    print("Done getting values")
+    print('Done getting values')
 
     # TODO: Nicer plot output
     plt.subplot(211)
     plt.plot(TIMEs, RTTs)
-    # plt.show()
+    plt.xlabel('time')
+    plt.ylabel('rtt')
 
     plt.subplot(212)
     plt.plot(TIMEs, CWNDs)
-    # plt.show()
+    plt.xlabel('time')
+    plt.ylabel('cwnd')
+
     plt.savefig(OUTPUT)
+
+    plt.show()
 
 
