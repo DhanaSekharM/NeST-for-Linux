@@ -53,46 +53,47 @@ def delete_ns(ns_name):
     Drops the namespace with name `ns_name`
     if it already exists.
     """
-    exec_subprocess('ip nets del ' + ns_name)
+    exec_subprocess('ip netns del ' + ns_name)
 
 def en_ip_forwarding(ns_name):
     """
     Enables ip forwarding in the namespace 
     `ns_name`. Used for routers
     """
-    exec_subprocess('ip netns exec ' + ns_name + ' sysctl -w net.ipv4.ip_forward=1 > /dev/null')
+    exec_subprocess('ip netns exec ' + ns_name + ' sysctl -w net.ipv4.ip_forward=1')
 
-def create_veth(int_name1, int_name2):
+#TODO: delete a veth
+def create_veth(dev_name1, dev_name2):
     """
     Create a veth interfaces with endpoints
-    `int_name1` and `int_name2`
+    `dev_name1` and `dev_name2`
     """
-    exec_subprocess('ip link add ' + int_name1 +' type veth peer name ' + int_name2)
+    exec_subprocess('ip link add ' + dev_name1 +' type veth peer name ' + dev_name2)
 
-def add_int_to_ns(ns_name, int_name):
+def add_int_to_ns(ns_name, dev_name):
     """
-    Add interface `int_name` to namespace `ns_name`
+    Add interface `dev_name` to namespace `ns_name`
     """
-    exec_subprocess('ip link set ' + int_name + ' netns ' + ns_name)
+    exec_subprocess('ip link set ' + dev_name + ' netns ' + ns_name)
 
-def set_int_up(ns_name, int_name):
+def set_int_up(ns_name, dev_name):
     """
-    Set interface `int_name` in namespace `ns_name` to up
+    Set interface `dev_name` in namespace `ns_name` to up
     """
-    exec_subprocess('ip netns exec ' + ns_name + ' ip link set dev ' + int_name + ' up')
+    exec_subprocess('ip netns exec ' + ns_name + ' ip link set dev ' + dev_name + ' up')
 
 # Use this function for `high level convinience`
-def setup_veth(ns_name1, ns_name2, int_name1, int_name2):
+def setup_veth(ns_name1, ns_name2, dev_name1, dev_name2):
     """
-    Sets up veth connection with interafaces `int_name1` and
-    `int_name2` associated with namespaces `ns_name1` and 
+    Sets up veth connection with interafaces `dev_name1` and
+    `dev_name2` associated with namespaces `ns_name1` and 
     `ns_name2` respectively. The interfaces are set up as well.
     """
-    create_veth(int_name1, int_name2)
-    add_int_to_ns(ns_name1, int_name1)
-    add_int_to_ns(ns_name2, int_name2)
-    set_int_up(ns_name1, int_name1)
-    set_int_up(ns_name2, int_name2)
+    create_veth(dev_name1, dev_name2)
+    add_int_to_ns(ns_name1, dev_name1)
+    add_int_to_ns(ns_name2, dev_name2)
+    set_int_up(ns_name1, dev_name1)
+    set_int_up(ns_name2, dev_name2)
 
 def create_peer(peer_name):
     """
@@ -125,13 +126,13 @@ def connect(peer_name=None, router_name1=None, router_name2=None):
         setup_veth(router_name1, router_name2, router1_int, router2_int)
         return (router1_int, router2_int)
 
-def assign_ip(host_name, int_name, ip_address):
+def assign_ip(host_name, dev_name, ip_address):
     """
     Assigns ip address `ip_address` to interface
-    `int_name` in host `host_name`.
+    `dev_name` in host `host_name`.
     """
     #TODO: Support for ipv6
-    exec_subprocess('ip netns exec ' + host_name + ' ip address add ' + ip_address + ' dev ' + int_name)
+    exec_subprocess('ip netns exec ' + host_name + ' ip address add ' + ip_address + ' dev ' + dev_name)
 
 def add_route(host_name, dest_ip, next_hop_ip, via_int):
     """
@@ -147,13 +148,13 @@ def add_route(host_name, dest_ip, next_hop_ip, via_int):
 # Only bandwith and latency is considered
 # Assuming tc on egress 
 # Using Netem
-def add_traffic_control(host_name, rate, latency):
+def add_traffic_control(host_name, dev_name, rate, latency):
     """
     Add traffic control to `host_name`.
     `rate` of the bandwidth
     `latency` of the link
     """
-    exec_subprocess('ip netns exec {} tc qdisc add dev {} root netem rate {} latency {}'.format())
+    exec_subprocess('ip netns exec {} tc qdisc add dev {} root netem rate {} latency {}'.format(host_name, dev_name, rate, latency))
 
 
 if __name__ == '__main__':
