@@ -31,18 +31,20 @@ class Error(Exception):
 class NamespaceAlreadyExists(Error):
    """Raised when the given namespace name
     to be added already exists"""
-   p# ass
+   pass
+
 def create_ns(ns_name):
     """
     Create namespace with name `ns_name`
     if it doesn't already exist
-    Delete namespace with name `ns_name`
+    Delt namespace with name `ns_name`
     if it doesn't already exist
-    try
-        if os.path.exist(/vardel/netns/ns_name):
-  #         raise NamespaceAlreadyExists
-        else:
-            exec_subprocess('ip netns add ' + ns_name)
+    """
+    # try
+    #     if os.path.exist(/vard/netns/ns_name):
+    #       raise NamespaceAlreadyExists
+    #     else:
+    exec_subprocess('ip netns add ' + ns_name)
     # except NamespaceAlreadyExists:
     #     print("The given namespace already exists")
 
