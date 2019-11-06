@@ -15,24 +15,43 @@ def exec_subprocess(cmd, block = True):
 		pass
 
 ############################################
-# CONVENTION: In parameter list, namespace 
-# names come before interface names.
+# CONVENTION: 
+# - In parameter list, namespace 
+#   names come before interface names.
+# - Peers are entities at the ends points of
+#   the network.
+# - Router connects atleast 2 hosts.
+# - Host represents either peer or router
+#   based on context.
 ############################################
 
+class Error(Exception):
+   """Base class for other exceptions"""
+   pass
+class NamespaceAlreadyExists(Error):
+   """Raised when the given namespace name
+    to be added already exists"""
+   p# ass
 def create_ns(ns_name):
     """
     Create namespace with name `ns_name`
     if it doesn't already exist
-    """
-    # TODO: Check if the ns_name already exists
-    exec_subprocess('ip netns add ' + ns_name)
+    Delete namespace with name `ns_name`
+    if it doesn't already exist
+    try
+        if os.path.exist(/vardel/netns/ns_name):
+  #         raise NamespaceAlreadyExists
+        else:
+            exec_subprocess('ip netns add ' + ns_name)
+    # except NamespaceAlreadyExists:
+    #     print("The given namespace already exists")
 
 def delete_ns(ns_name):
     """
     Drops the namespace with name `ns_name`
     if it already exists.
     """
-    exec_subprocess('ip nets drop ' + ns_name)
+    exec_subprocess('ip nets del ' + ns_name)
 
 def en_ip_forwarding(ns_name):
     """
@@ -48,7 +67,7 @@ def create_veth(int_name1, int_name2):
     """
     exec_subprocess('ip link add ' + int_name1 +' type veth peer name ' + int_name2)
 
-def add_int2ns(ns_name, int_name):
+def add_int_to_ns(ns_name, int_name):
     """
     Add interface `int_name` to namespace `ns_name`
     """
@@ -68,8 +87,8 @@ def setup_veth(ns_name1, ns_name2, int_name1, int_name2):
     `ns_name2` respectively. The interfaces are set up as well.
     """
     create_veth(int_name1, int_name2)
-    add_int2ns(ns_name1, int_name1)
-    add_int2ns(ns_name2, int_name2)
+    add_int_to_ns(ns_name1, int_name1)
+    add_int_to_ns(ns_name2, int_name2)
     set_int_up(ns_name1, int_name1)
     set_int_up(ns_name2, int_name2)
 
@@ -111,9 +130,29 @@ def assign_ip(host_name, int_name, ip_address):
     """
     #TODO: Support for ipv6
     exec_subprocess('ip netns exec ' + host_name + ' ip address add ' + ip_address + ' dev ' + int_name)
-    
 
-#TODO: Assigning ip addresses to interfaces and routing
+def add_route(host_name, dest_ip, next_hop_ip, via_int):
+    """
+    Adds a route in routing table of `host_name`.
+    `dest_ip` is the destination ip for the route.
+    `next_hop_ip` is the IP of the very next device 
+    (next hop) in the route.
+    `via_int` is the corresponding interface in the
+    host.
+    """
+    exec_subprocess('ip netns exec {} ip route add {} via {} dev {}'.format(host_name, dest_ip, next_hop_ip, via_int))
+
+# Only bandwith and latency is considered
+# Assuming tc on egress 
+# Using Netem
+def add_traffic_control(host_name, rate, latency):
+    """
+    Add traffic control to `host_name`.
+    `rate` of the bandwidth
+    `latency` of the link
+    """
+    exec_subprocess('ip netns exec {} tc qdisc add dev {} root netem rate {} latency {}'.format())
+
 
 if __name__ == '__main__':
     n1 = 'red'
