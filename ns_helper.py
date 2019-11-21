@@ -5,8 +5,6 @@
 import os
 import subprocess
 
-# TODO: This module needs to be tested; each function should be seperately tested
-
 def exec_subprocess(cmd, block = True):
 	temp = subprocess.Popen(cmd.split())
 	if block:
@@ -25,14 +23,6 @@ def exec_subprocess(cmd, block = True):
 #   based on context.
 ############################################
 
-class Error(Exception):
-   """Base class for other exceptions"""
-   pass
-class NamespaceAlreadyExists(Error):
-   """Raised when the given namespace name
-    to be added already exists"""
-   pass
-
 def create_ns(ns_name):
     """
     Create namespace with name `ns_name`
@@ -40,13 +30,7 @@ def create_ns(ns_name):
     Delt namespace with name `ns_name`
     if it doesn't already exist
     """
-    # try
-    #     if os.path.exist(/vard/netns/ns_name):
-    #       raise NamespaceAlreadyExists
-    #     else:
     exec_subprocess('ip netns add ' + ns_name)
-    # except NamespaceAlreadyExists:
-    #     print("The given namespace already exists")
 
 def delete_ns(ns_name):
     """
@@ -102,13 +86,13 @@ def create_peer(peer_name):
     """
     create_ns(peer_name)
 
-def create_router(peer_name):
+def create_router(router_name):
     """
-    Creates a peer with the name `peer_name` and adds it to 
+    Creates a router with the name `router_name` and adds it to 
     the existing topology.
     """
-    create_ns(peer_name)
-    en_ip_forwarding(peer_name)
+    create_ns(router_name)
+    en_ip_forwarding(router_name)
 
 def connect(peer_name=None, router_name1=None, router_name2=None):
     """
@@ -155,17 +139,3 @@ def add_traffic_control(host_name, dev_name, rate, latency):
     `latency` of the link
     """
     exec_subprocess('ip netns exec {} tc qdisc add dev {} root netem rate {} latency {}'.format(host_name, dev_name, rate, latency))
-
-
-if __name__ == '__main__':
-    n1 = 'red'
-    n2 = 'blue'
-    n3 = 'green'
-    n4 = 'pink'
-    # create_ns(n1)
-    # create_ns(n2)
-    # setup_veth(n1, n2, i1, i2)
-    create_peer(n3)
-    create_router(n4)
-    (int1, int2) = connect(peer_name=n3, router_name1=n4)
-    assign_ip(n3, int1, '10.0.1.1/24')
